@@ -1,0 +1,4 @@
+{
+    "methods": ["histogram", "otsu", "sobel", "lbp", "glcm"],
+    "image_size": 500
+}
