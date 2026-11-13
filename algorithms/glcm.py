@@ -1,6 +1,6 @@
 import numpy as np
 
-def glcm_texture(image, levels=16):
+def glcm_texture(image, levels=16, mask=None):
     height, width = image.shape
 
     gray = image.astype(np.int32) * levels // 256
@@ -9,6 +9,9 @@ def glcm_texture(image, levels=16):
 
     for i in range(height):
         for j in range(width - 1):
+            if mask is not None:
+                if not (mask[i, j] and mask[i, j + 1]):
+                    continue
             a = gray[i, j]
             b = gray[i, j + 1]
 

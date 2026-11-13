@@ -8,6 +8,7 @@ from algorithms.otsu import otsu_threshold
 from algorithms.sobel import sobel_filter
 from algorithms.lbp import lbp_texture
 from algorithms.glcm import glcm_texture
+from algorithms.iris_mask import detect_iris
 
 # Знаходимо фотографії
 folder = Path("data/images")
@@ -21,7 +22,7 @@ if not images:
     raise ValueError("У папці data/images немає фотографій")
 
 #перше фото
-image_path = images[0]
+image_path = images[9]
 
 original = Image.open(image_path).convert("RGB")
 original.thumbnail((500, 500))
@@ -31,10 +32,11 @@ gray = np.array(original.convert("L"))
 
 # алгоритми
 histogram = histogram_equalization(gray)
+mask, cx, cy, pupil_radius, iris_radius = detect_iris(gray)
 otsu, threshold = otsu_threshold(gray)
 sobel = sobel_filter(gray)
-lbp = lbp_texture(gray)
-glcm, contrast, energy, homogeneity = glcm_texture(gray)
+lbp = lbp_texture(gray, mask)
+glcm, contrast, energy, homogeneity = glcm_texture(gray, mask=mask)
 
 # Виводимо результати
 print("Фотографія:", image_path.name)
@@ -70,7 +72,35 @@ for a in ax.flat:
 plt.tight_layout()
 
 # Зберігаю результат
-Path("results").mkdir(exist_ok=True)
-plt.savefig("results/first_image.png", dpi=150)
+result_folder = Path("results") / image_path.stem
+result_folder.mkdir(parents=True, exist_ok=True)
+
+plt.savefig(result_folder / "processing.png", dpi=150)
+
+print("Центр райдужки:", cx, cy)
+print("Радіус зіниці:", pupil_radius)
+print("Радіус райдужки:", iris_radius)
+
+# Показуємо знайдені межі
+from matplotlib.patches import Circle
+
+fig2, ax2 = plt.subplots(figsize=(6, 6))
+ax2.imshow(original)
+
+ax2.add_patch(Circle(
+    (cx, cy), iris_radius,
+    fill=False, color="lime", linewidth=2
+))
+
+ax2.add_patch(Circle(
+    (cx, cy), pupil_radius,
+    fill=False, color="red", linewidth=2
+))
+
+ax2.set_title("Автоматичне виділення райдужки")
+ax2.axis("off")
+
+plt.tight_layout()
+plt.savefig(result_folder / "iris_detection.png", dpi=150)
 
 plt.show()

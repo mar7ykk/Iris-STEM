@@ -73,3 +73,13 @@ def test_glcm():
     assert np.isclose(contrast, 225)
     assert np.isclose(energy, 1)
     assert np.isclose(homogeneity, 1 / 226)
+
+def test_lbp_mask():
+    image = np.full((5, 5), 100, dtype=np.uint8)
+    mask = np.zeros((5, 5), dtype=bool)
+    mask[1:4, 1:4] = True
+
+    result = lbp_texture(image, mask)
+
+    assert result[2, 2] == 255
+    assert result[1, 1] == 0
