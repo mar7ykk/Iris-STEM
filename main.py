@@ -27,8 +27,9 @@ folder = Path("data/images")
 
 images = sorted([
     file for file in folder.iterdir()
-    if file.suffix.lower() in [".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"]
-])
+    if file.suffix.lower() in [".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff"]],
+    key=lambda file: int(file.stem.split("(")[1].split(")")[0])
+)
 
 if not images:
     raise ValueError("У папці data/images немає фотографій")
@@ -133,7 +134,7 @@ for image_path in images[:image_count]:
     result_folder.mkdir(parents=True, exist_ok=True)
 
     fig.savefig(result_folder / "processing.png", dpi=150)
-        # Зберігаємо результати кожного алгоритму окремо
+    # Зберігаємо результати кожного алгоритму окремо
     if histogram is not None:
         Image.fromarray(histogram).save(result_folder / "histogram.png")
 
@@ -176,7 +177,7 @@ for image_path in images[:image_count]:
         fill=False, color="red", linewidth=2
     ))
 
-    ax2.set_title("Автоматичне виділення райдужки")
+    ax2.set_title("Приблизне виділення області райдужки")
     ax2.axis("off")
 
     plt.tight_layout()

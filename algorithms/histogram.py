@@ -2,6 +2,12 @@ import numpy as np
 
 
 def histogram_equalization(image):
+    """
+    Виконує вирівнювання гістограми зображення.
+
+    image — двовимірний масив яскравостей пікселів.
+    Повертає зображення з вирівняною гістограмою.
+    """
     # Кількість пікселів кожного рівня яскравості
     histogram = np.bincount(image.ravel(), minlength=256)
 

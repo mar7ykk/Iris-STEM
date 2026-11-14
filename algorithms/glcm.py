@@ -1,12 +1,23 @@
 import numpy as np
 
 def glcm_texture(image, levels=16, mask=None):
+    """
+    Аналізує текстуру зображення за допомогою матриці GLCM.
+
+    image — двовимірний масив яскравостей пікселів.
+    levels — кількість рівнів яскравості.
+    mask — необов'язкова маска області райдужки.
+    Повертає матрицю GLCM, контраст, енергію та однорідність.
+    """
     height, width = image.shape
 
+    # Зменшуємо кількість рівнів яскравості
     gray = image.astype(np.int32) * levels // 256
 
+    # Створюємо матрицю спільної зустрічальності
     matrix = np.zeros((levels, levels), dtype=np.float64)
 
+    # Підраховуємо пари сусідніх пікселів по горизонталі
     for i in range(height):
         for j in range(width - 1):
             if mask is not None:
@@ -17,11 +28,13 @@ def glcm_texture(image, levels=16, mask=None):
 
             matrix[a, b] += 1
 
+    # Нормалізуємо матрицю
     total = np.sum(matrix)
 
     if total > 0:
         matrix = matrix / total
 
+    # Обчислюємо текстурні характеристики
     contrast = 0
     energy = 0
     homogeneity = 0
