@@ -4,6 +4,7 @@ from algorithms.otsu import otsu_threshold
 from algorithms.sobel import sobel_filter
 from algorithms.lbp import lbp_texture
 from algorithms.glcm import glcm_texture
+from algorithms.metrics import calculate_mse, calculate_psnr
 
 
 def test_histogram():
@@ -66,7 +67,7 @@ def test_glcm():
         [0, 255]
     ], dtype=np.uint8)
 
-    matrix, contrast, energy, homogeneity = glcm_texture(image)
+    matrix, contrast, energy, homogeneity = glcm_texture(image, levels=16)
 
     assert matrix[0, 15] == 1
     assert np.isclose(np.sum(matrix), 1)
@@ -83,3 +84,13 @@ def test_lbp_mask():
 
     assert result[2, 2] == 255
     assert result[1, 1] == 0
+
+def test_metrics():
+    original = np.full((2, 2), 100, dtype=np.uint8)
+    processed = np.full((2, 2), 110, dtype=np.uint8)
+
+    mse = calculate_mse(processed, original)
+    psnr = calculate_psnr(mse)
+
+    assert mse == 100
+    assert np.isclose(psnr, 28.1308, atol=0.0001)
