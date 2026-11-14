@@ -13,6 +13,7 @@ from algorithms.sobel import sobel_filter
 from algorithms.lbp import lbp_texture
 from algorithms.glcm import glcm_texture
 from algorithms.iris_mask import detect_iris
+from algorithms.metrics import calculate_mse, calculate_psnr
 
 # Зчитуємо налаштування програми
 with open("config.json", "r", encoding="utf-8") as file:
@@ -50,7 +51,15 @@ for image_path in images[:image_count]:
     otsu, threshold = otsu_threshold(gray)  if "otsu" in methods else (None, None)
     sobel = sobel_filter(gray) if "sobel" in methods else None
     lbp = lbp_texture(gray, mask) if "lbp" in methods else None
-    glcm, contrast, energy, homogeneity = glcm_texture(gray, mask=mask) if "glcm" in methods else (None, None, None, None)
+    glcm, contrast, energy, homogeneity = glcm_texture(gray, levels=config["glcm_levels"], mask=mask) if "glcm" in methods else (None, None, None, None)
+    mse_histogram = calculate_mse(histogram, gray) if histogram is not None else None
+    mse_otsu = calculate_mse(otsu, gray) if otsu is not None else None
+    mse_sobel = calculate_mse(sobel, gray) if sobel is not None else None
+    mse_lbp = calculate_mse(lbp, gray) if lbp is not None else None
+    psnr_histogram = calculate_psnr(mse_histogram) if mse_histogram is not None else None
+    psnr_otsu = calculate_psnr(mse_otsu) if mse_otsu is not None else None
+    psnr_sobel = calculate_psnr(mse_sobel) if mse_sobel is not None else None
+    psnr_lbp = calculate_psnr(mse_lbp) if mse_lbp is not None else None
 
     # Виводимо результати
     print("Фотографія:", image_path.name)
@@ -66,10 +75,19 @@ for image_path in images[:image_count]:
         "Оцу": "Відкрити" if otsu is not None else "",
         "Собель": "Відкрити" if sobel is not None else "",
         "LBP": "Відкрити" if lbp is not None else "",
+        "GLCM": "Відкрити" if glcm is not None else "",
         "Поріг Оцу": threshold,
         "Контраст GLCM": round(contrast, 4) if contrast is not None else None,
         "Енергія GLCM": round(energy, 4) if energy is not None else None,
-        "Однорідність GLCM": round(homogeneity, 4) if homogeneity is not None else None
+        "Однорідність GLCM": round(homogeneity, 4) if homogeneity is not None else None,
+        "MSE гістограми": round(mse_histogram, 2) if mse_histogram is not None else None,
+        "MSE Оцу": round(mse_otsu, 2) if mse_otsu is not None else None,
+        "MSE Собеля": round(mse_sobel, 2) if mse_sobel is not None else None,
+        "MSE LBP": round(mse_lbp, 2) if mse_lbp is not None else None,
+        "PSNR гістограми": round(psnr_histogram, 2) if psnr_histogram is not None else None,
+        "PSNR Оцу": round(psnr_otsu, 2) if psnr_otsu is not None else None,
+        "PSNR Собеля": round(psnr_sobel, 2) if psnr_sobel is not None else None,
+        "PSNR LBP": round(psnr_lbp, 2) if psnr_lbp is not None else None
     })
 
     # вікно з результатами
@@ -128,9 +146,19 @@ for image_path in images[:image_count]:
     if lbp is not None:
         Image.fromarray(lbp).save(result_folder / "lbp.png")
 
-    print("Центр райдужки:", cx, cy)
-    print("Радіус зіниці:", pupil_radius)
-    print("Радіус райдужки:", iris_radius)
+    if glcm is not None:
+        fig3, ax3 = plt.subplots(figsize=(7, 6))
+
+        im = ax3.imshow(glcm, cmap="viridis")
+        fig3.colorbar(im, ax=ax3, label="Ймовірність")
+
+        ax3.set_title("Матриця GLCM")
+        ax3.set_xlabel("Рівень яскравості сусіднього пікселя")
+        ax3.set_ylabel("Рівень яскравості поточного пікселя")
+
+        fig3.tight_layout()
+        fig3.savefig(result_folder / "glcm.png", dpi=150)
+        plt.close(fig3)
 
     # Показуємо знайдені межі
     from matplotlib.patches import Circle
@@ -182,7 +210,8 @@ files = {
     3: "histogram.png",
     4: "otsu.png",
     5: "sobel.png",
-    6: "lbp.png"
+    6: "lbp.png",
+    7: "glcm.png"
 } 
 
 for row in range(2, ws.max_row + 1):
@@ -202,13 +231,8 @@ for cell in ws[1]:
     cell.alignment = Alignment(horizontal="center", vertical="center")
 
 # Ширина стовпців
-for column in "BCDEF":
-    ws.column_dimensions[column].width = 20
-
-ws.column_dimensions["A"].width = 25
-
-for column in "GHIJ":
-    ws.column_dimensions[column].width = 23
+for column in ws.columns:
+    ws.column_dimensions[column[0].column_letter].width = 15
 
 wb.save("results/metrics.xlsx")
 
